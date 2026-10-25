@@ -1,49 +1,61 @@
 import discord
 import random
-from bot_logic import gen_pass
+from discord.ext import commands
+from bot_logic import gen_pass as generate_password
 
 token = ""
-# intents variable stores the permissions of the bot
+
+# Intents variable stores the permissions of the bot
 intents = discord.Intents.default()
+
 # Enable the permission to read message content
 intents.message_content = True
-# Create a bot and pass the intents
-client = discord.Client(intents=intents)
 
-@client.event
+# Create a bot with a command prefix
+bot = commands.Bot(command_prefix='$', intents=intents)
+
+
+@bot.event
 async def on_ready():
-    print(f'We have logged in as {client.user}')
+    print(f'We have logged in as {bot.user}')
 
-@client.event
-async def on_message(message):
-    print(message.author.id)
-    if message.author == client.user:
-        return
-    if message.content.startswith('$hello'):
-        await message.channel.send("Hello!")
-    elif message.content.startswith('$bye'):
-        await message.channel.send("\U0001f642")
-    elif message.content.startswith('$gen_pass'):
-        parts = message.content.split()
-        if len(parts) == 2 and parts[1].isdigit():
-            length = int(parts[1])
-            if length > 0:
-                response = gen_pass(length)
-                await message.channel.send(response)
-            else:
-                await message.channel.send("Enter a number greater than 0.")
-        else:
-            await message.channel.send("Usage: $gen_pass <length>")
-    elif message.content.startswith('$flip_coin'):
-        result = random.choice(["Heads", "Tails"])
-        await message.channel.send(result)
-    elif message.content == '$shutdown':
-        if message.author.id == 1217937508286070846:
-            await message.channel.send("Shutting down...")
-            await client.close()
-        else:
-            await message.channel.send("Please enter a valid number! Example: $gen_pass 12")
+
+# Hello command
+@bot.command()
+async def hello(ctx):
+    await ctx.send("Hello!")
+
+
+# Bye command
+@bot.command()
+async def bye(ctx):
+    await ctx.send("\U0001f642")
+
+
+# Password generator command
+@bot.command()
+async def gen_pass(ctx, length: int):
+    if length > 0:
+        response = generate_password(length)
+        await ctx.send(response)
     else:
-        await message.channel.send(message.content)
+        await ctx.send("Enter a number greater than 0.")
 
-client.run(token)
+
+# Flip a coin command
+@bot.command()
+async def flip_coin(ctx):
+    result = random.choice(["Heads", "Tails"])
+    await ctx.send(result)
+
+
+# Shutdown command
+@bot.command()
+async def shutdown(ctx):
+    if ctx.author.id == 1217937508286070846:
+        await ctx.send("Shutting down...")
+        await bot.close()
+    else:
+        await ctx.send("You do not have permission to shut down this bot.")
+
+bot.run(token)
